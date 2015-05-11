@@ -21,6 +21,8 @@ superagent.get('corpus.csv').end()
       @field 'word'
       @ref 'word'
 
+  indexes.lunr.pipeline.remove(lunr.stopWordFilter)
+
   for word in words
     indexes.lunr.add {word: word}
   indexes

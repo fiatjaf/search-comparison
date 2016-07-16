@@ -9,6 +9,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "fuse.js": "^2.3.0",
     "fuzzyset.js": "0.0.1",
     "lunr": "^0.5.9",
     "promise": "^7.0.1",

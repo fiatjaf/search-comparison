@@ -7,6 +7,7 @@ superagent = require 'superagent-promise'
 sifter   = require 'sifter'
 lunr     = require 'lunr'
 fuzzyset = require 'fuzzyset.js'
+fuse     = require 'fuse.js'
 
 # strings
 superagent.get('corpus.csv').end()
@@ -20,6 +21,7 @@ superagent.get('corpus.csv').end()
     lunr: lunr ->
       @field 'word'
       @ref 'word'
+    fuse: new fuse({id: word} for word in words, keys: ['id'], include: ['score'], threshold: 0.5)
 
   indexes.lunr.pipeline.remove(lunr.stopWordFilter)
 
@@ -38,15 +40,17 @@ Main = React.createClass
   render: ->
     (div {},
       (input
+        style: {width: '400px'},
+        placeholder: 'search for common words here'
         onChange: @search
         ref: 'input'
         style: {display: 'block', clear: 'both'}
       )
       (div {},
-        (div {style: {float: 'left', width: '30%'}},
+        (div {style: {float: 'left', width: '23%'}},
           (strong {}, indexname)
           (div {},
-            "#{item.score}: #{item.id}"
+            "#{item.score.toString().slice(0, 4)}: #{item.id}"
           ) for item in @state.results[indexname] or []
         ) for indexname of @props.indexes
       )
@@ -56,6 +60,7 @@ Main = React.createClass
     q = React.findDOMNode(@refs.input).value
     @setState
       results:
-        fuzzyset: ({score: i[0], id: i[1]} for i in ((@props.indexes.fuzzyset.get q) or [])).slice(0, 100)
-        sifter: ({score: i.score, id: words[i.id]} for i in (@props.indexes.sifter.search q, fields: ['id'], limit: 100).items)
-        lunr: ({score: i.score, id: i.ref} for i in @props.indexes.lunr.search q).slice(0, 100)
+        fuzzyset: ({score: i[0], id: i[1]} for i in ((@props.indexes.fuzzyset.get q) or [])).slice(0, 23)
+        sifter: ({score: i.score, id: words[i.id]} for i in (@props.indexes.sifter.search q, fields: ['id'], limit: 23).items)
+        lunr: ({score: i.score, id: i.ref} for i in @props.indexes.lunr.search q).slice(0, 23)
+        fuse: ({score: i.score, id: i.item.id}) for i in @props.indexes.fuse.search( q).slice(0, 23)

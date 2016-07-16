@@ -1,3 +1,4 @@
+Promise = require 'promise'
 React = require 'react'
 superagent = require 'superagent-promise'
 levelup = require 'levelup'
@@ -33,12 +34,14 @@ superagent.get('corpus.csv').end()
     indexes.lunr.add {word: word}
 
   # setup levi
-  indexes.levi.get 'disregard', (err) ->
-    if err
+  ready = new Promise (resolve) ->
+    indexes.levi.get 'disregard', (err) ->
+      if not err
+        resolve()
       indexes.levi.batch ({type: 'put', key: w, value: {id: w}} for w in words), (err) ->
-        console.log err
+        if err then reject() else resolve()
 
-  return indexes
+  return ready.then -> indexes
 )
 .then((indexes) ->
   React.render React.createElement(Main, {indexes: indexes}), document.getElementsByTagName('main')[0]

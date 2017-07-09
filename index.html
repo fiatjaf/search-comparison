@@ -1,22 +1,23 @@
 <!doctype html>
 
-<script>
-var _gauges = _gauges || [];
-(function() {
-  var t   = document.createElement('script');
-  t.type  = 'text/javascript';
-  t.async = true;
-  t.id    = 'gauges-tracker';
-  t.setAttribute('data-site-id', '58288ea5c88d9005ef005411');
-  t.setAttribute('data-track-path', 'https://track.gaug.es/track.gif');
-  t.src = 'https://d36ee2fcip1434.cloudfront.net/track.js';
-  var s = document.getElementsByTagName('script')[0];
-  s.parentNode.insertBefore(t, s);
-})();
-</script>
+<script>;(function (d, s, c) {
+  var x, h, n = Date.now()
+  tc = function (p) {
+    m = s.getItem('_tcx') > n ? s.getItem('_tch') : 'sebo-figas'
+    x = new XMLHttpRequest()
+    x.addEventListener('load', function () {
+      if (x.status == 200) {
+        s.setItem('_tch', x.responseText)
+        s.setItem('_tcx', n + 14400000)
+      }
+    })
+    x.open('GET', 'https://visitantes.alhur.es/'+m+'.xml?r='+d.referrer+'&c='+c+(p?'&p='+p:''))
+    x.send()
+  }
+  tc()
+})(document, localStorage, 'qv2oun8n');</script>
 
 <main>
-  <center>Please wait until the levi index is filled. Nothing is being stored in your computer.</center>
 </main>
 <a href="https://github.com/fiatjaf/js-search-engines-comparison"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://camo.githubusercontent.com/38ef81f8aca64bb9a64448d0d70f1308ef5341ab/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f6461726b626c75655f3132313632312e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png"></a>
 

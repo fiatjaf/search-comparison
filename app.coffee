@@ -1,17 +1,16 @@
 Promise = require 'promise'
 React = require 'react'
 superagent = require 'superagent-promise'
-levelup = require 'levelup'
-memdown = require 'memdown'
+fuzzy = require 'fuzzy'
+fastFuzzy = require 'fast-fuzzy'
 
-{div, input, strong} = React.DOM
+{div, a, input, strong} = React.DOM
 
 # libraries
 sifter   = require 'sifter'
 lunr     = require 'lunr'
 fuzzyset = require 'fuzzyset.js'
 fuse     = require 'fuse.js'
-levi     = require 'levi'
 
 # strings
 superagent.get('corpus.csv').end()
@@ -22,26 +21,19 @@ superagent.get('corpus.csv').end()
   indexes =
     fuzzyset: fuzzyset words
     sifter: new sifter ({id: word} for word in words)
+    fuzzy: true
     lunr: lunr ->
       @field 'word'
       @ref 'word'
     fuse: new fuse ({id: word} for word in words), keys: ['id'], include: ['score'], threshold: 0.5
-    levi: levi(levelup 'levi', db: memdown).use(levi.tokenizer()).use(levi.stemmer())
+    'fast-fuzzy': true
 
   # setup lunr
   indexes.lunr.pipeline.remove(lunr.stopWordFilter)
   for word in words
     indexes.lunr.add {word: word}
 
-  # setup levi
-  ready = new Promise (resolve) ->
-    indexes.levi.get 'disregard', (err) ->
-      if not err
-        resolve()
-      indexes.levi.batch ({type: 'put', key: w, value: {id: w}} for w in words), (err) ->
-        if err then reject() else resolve()
-
-  return ready.then -> indexes
+  return indexes
 )
 .then((indexes) ->
   React.render React.createElement(Main, {indexes: indexes}), document.getElementsByTagName('main')[0]
@@ -60,8 +52,10 @@ Main = React.createClass
         style: {display: 'block', clear: 'both', width: '300px'}
       )
       (div {},
-        (div {style: {float: 'left', width: '19%'}},
-          (strong {}, indexname)
+        (div {style: {float: 'left', width: '16%'}},
+          (strong {},
+            (a {href: 'https://npmjs.com/package/' + indexname, target: '_blank'}, indexname)
+          )
           (div {},
             "#{item.score.toString().slice(0, 4)}: #{item.id}"
           ) for item in @state.results[indexname] or []
@@ -69,14 +63,22 @@ Main = React.createClass
       )
     )
 
+  timeout: null,
+
   search: (e) ->
     q = React.findDOMNode(@refs.input).value
 
-    @props.indexes.levi.searchStream(q, limit: 23).toArray (leviResults) =>
-      @setState
-        results:
-          fuzzyset: ({score: i[0], id: i[1]} for i in ((@props.indexes.fuzzyset.get q) or [])).slice(0, 23)
-          sifter: ({score: i.score, id: words[i.id]} for i in (@props.indexes.sifter.search q, fields: ['id'], limit: 23).items)
-          lunr: ({score: i.score, id: i.ref} for i in @props.indexes.lunr.search q).slice(0, 23)
-          fuse: ({score: i.score, id: i.item.id}) for i in @props.indexes.fuse.search( q).slice(0, 23)
-          levi: ({score: i.score, id: i.key}) for i in leviResults
+    clearTimeout(@timeout)
+
+    @setState
+      results:
+        fuzzyset: ({score: i[0], id: i[1]} for i in ((@props.indexes.fuzzyset.get q) or [])).slice(0, 23)
+        sifter: ({score: i.score, id: words[i.id]} for i in (@props.indexes.sifter.search q, fields: ['id'], limit: 23).items)
+        lunr: ({score: i.score, id: i.ref} for i in @props.indexes.lunr.search q).slice(0, 23)
+        fuzzy: ({score: i.score, id: i.string} for i in fuzzy.filter q, window.words).slice(0, 23)
+        fuse: ({score: i.score, id: i.item.id} for i in @props.indexes.fuse.search q).slice(0, 23)
+        'fast-fuzzy': ({score: i.score, id: i.item} for i in fastFuzzy.search(q, window.words, returnScores: true)).slice(0, 23)
+
+    @timeout = setTimeout(() ->
+      window.tc && tc 1
+    , 3000)
